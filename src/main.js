@@ -5,6 +5,12 @@ const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
 const fs = require('fs');
 const ipcMain = electron.ipcMain;
+const path = require('path');
+const Tsheets = require(path.resolve(path.join(__dirname, 'tsheets.js')));
+const ElectronSettings = require('electron-settings');
+const QuickWindow = require(path.resolve(path.join(__dirname, 'quick_window.js')));
+let settings = new ElectronSettings();
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -26,29 +32,41 @@ app.on('window-all-closed', function() {
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600});
+  mainWindow = new BrowserWindow({
+    width: 800, 
+    height: 600,
+    webPreferences: {
+      preload: path.resolve(path.join(__dirname, 'renderer.js')),
+      nodeIntegration: false,
+      webSecurity: true
+    }
+  });
 
   // and load the index.html of the app.
-  mainWindow.loadURL('https://equisolve.tsheets.com/');
+  // mainWindow.loadURL('https://equisolve.tsheets.com/');
 
 
+  var url;
+  if (url = settings.get('company-url')) {
+    mainWindow.loadURL(url);
+  } else {
+    mainWindow.loadURL('https://www.tsheets.com/signin');
+    mainWindow.webContents.on('did-navigate', function(event, url) {
+      console.log('did-navigate:');
+      console.log(url);
+      if (url.match(/https:\/\/[\w-]+\.tsheets\.com/)) {
+        console.log('set company url to ' + url);
+        settings.set('company-url', url);
+      }
+    });
+  }
   
   // Open the DevTools.
   //mainWindow.webContents.openDevTools();
 
-  // Idle warning
-  // const dialog = require('electron').dialog;
-  // dialog.showMessageBox(mainWindow, {type: "question", buttons: ["Yes", "No"], title: "You are idle.", message: "Do you want to log out?"});
-  var code = fs.readFileSync(app.getAppPath() + "/renderer.js");
-  mainWindow.webContents.executeJavaScript(`try { ${code} } catch (e) { console.log("ERROR:"); console.log(e); }`);
-  
-  ipcMain.on('status', function(event, arg) {
-    if (arg == "clocked_in") {
-      app.dock.setIcon(app.getAppPath() + "/images/stop.png");
-    } else if (arg == "clocked_out") {
-      app.dock.setIcon(app.getAppPath() + "/images/play.png");
-    }
-  });
+
+  const tsheets = new Tsheets(mainWindow);
+  //const quick_window = new QuickWindow({main_window: mainWindow});
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {
