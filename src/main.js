@@ -9,6 +9,7 @@ const path = require('path');
 const Tsheets = require(path.resolve(path.join(__dirname, 'tsheets.js')));
 const ElectronSettings = require('electron-settings');
 const QuickWindow = require(path.resolve(path.join(__dirname, 'quick_window.js')));
+const TSheetsMenu = require(path.resolve(path.join(__dirname, 'menu.js')));
 let settings = new ElectronSettings();
 
 
@@ -41,6 +42,10 @@ app.on('ready', function() {
       webSecurity: true
     }
   });
+
+
+  // Menu
+  var menu = new TSheetsMenu();
 
   // and load the index.html of the app.
   // mainWindow.loadURL('https://equisolve.tsheets.com/');
