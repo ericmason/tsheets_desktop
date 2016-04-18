@@ -111,7 +111,8 @@ class TSheetsMenu {
     ];
 
     if (process.platform == 'darwin') {
-      var name = require('electron').app.getName();
+      var app = require('electron').app;
+      var name = app.getName();
       template.unshift({
         label: name,
         submenu: [
@@ -166,7 +167,6 @@ class TSheetsMenu {
       );
     }
 
-    console.log('adding the menu');
     var menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
   }
