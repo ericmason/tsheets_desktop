@@ -31,13 +31,9 @@ class Tsheets {
 				onClockedOut();
 			}
 		}
-			
 
 		if (onClockedOut) {
-			ipcMain.on('status', function(event, arg) {
-				if (arg == 'clocked_out')
-					onClockedOut();
-			});
+			this.clockout_listeners.push(onClockedOut);
 		}
 		this.window.webContents.send('idle-clockout', '');
 	}
@@ -45,6 +41,7 @@ class Tsheets {
 	constructor(window) {
 		this.window = window;
 		this.clocked_out = true;
+		this.clockout_listeners = [];
 
 		const self = this;
 		setInterval(function() {self.clockoutOnIdle()}, 500);
@@ -56,6 +53,10 @@ class Tsheets {
 			} else if (arg == "clocked_out") {
 				app.dock.setIcon(app.getAppPath() + "/images/tsheets.png");
 				self.clocked_out = true;
+				self.clockout_listeners.map(function(f) {
+					f();
+				});
+				self.clockout_listeners = [];
 			}
 		});
 	}
