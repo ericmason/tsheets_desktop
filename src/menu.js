@@ -151,7 +151,7 @@ class TSheetsMenu {
           {
             label: 'Quit',
             accelerator: 'Command+Q',
-            click: function() { app.quit(); }
+            click: function() { app.clockout_quit(); }
           },
         ]
       });

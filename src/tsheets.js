@@ -11,7 +11,7 @@ class Tsheets {
 		const max_idle_time = 5 * 60; // seconds
 
 		if (idle.getIdleTime() > max_idle_time && !this.clocked_out) {
-			this.window.webContents.send('idle-clockout', '');
+			clockout();
 			this.clocked_out = true;
 			electron.app.dock.bounce('critical');
 			setTimeout(function() {
@@ -25,9 +25,26 @@ class Tsheets {
 		}
 	}
 
+	clockout(onClockedOut = null) {
+		if (this.clocked_out) {
+			if (onClockedOut) {
+				onClockedOut();
+			}
+		}
+			
+
+		if (onClockedOut) {
+			ipcMain.on('status', function(event, arg) {
+				if (arg == 'clocked_out')
+					onClockedOut();
+			});
+		}
+		this.window.webContents.send('idle-clockout', '');
+	}
+
 	constructor(window) {
 		this.window = window;
-		this.clocked_out = false;
+		this.clocked_out = true;
 
 		const self = this;
 		setInterval(function() {self.clockoutOnIdle()}, 500);

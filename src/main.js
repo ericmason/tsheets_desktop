@@ -22,7 +22,7 @@ app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform != 'darwin') {
-    app.quit();
+    app.clockout_quit();
   }
 });
 
@@ -57,10 +57,7 @@ app.on('ready', function() {
   } else {
     mainWindow.loadURL('https://www.tsheets.com/signin');
     mainWindow.webContents.on('did-navigate', function(event, url) {
-      console.log('did-navigate:');
-      console.log(url);
       if (url.match(/https:\/\/[\w-]+\.tsheets\.com/)) {
-        console.log('set company url to ' + url);
         settings.set('company-url', url);
       }
     });
@@ -71,7 +68,31 @@ app.on('ready', function() {
 
 
   const tsheets = new Tsheets(mainWindow);
+
+  app.clockout = function() {
+    tsheets.clockout();
+  };
+
+  app.clockout_quit = function() {
+    tsheets.clockout(function() {
+      app.quit();
+    });
+
+    // Quit after a second regardless
+    setTimeout(function() {
+      tsheets.clocked_out = true;
+      app.quit()
+    }, 1000);
+  }
+
   //const quick_window = new QuickWindow({main_window: mainWindow});
+
+  mainWindow.on('close', function(e) {
+    if (!tsheets.clocked_out) {
+      app.clockout_quit();
+      e.preventDefault();
+    }
+  });
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {
