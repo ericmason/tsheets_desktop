@@ -10,6 +10,8 @@ const Tsheets = require(path.resolve(path.join(__dirname, 'tsheets.js')));
 const ElectronSettings = require('electron-settings');
 const QuickWindow = require(path.resolve(path.join(__dirname, 'quick_window.js')));
 const TSheetsMenu = require(path.resolve(path.join(__dirname, 'menu.js')));
+const Menu = electron.Menu;
+const Tray = electron.Tray;
 let settings = new ElectronSettings();
 
 
@@ -42,14 +44,47 @@ app.on('ready', function() {
       webSecurity: true
     }
   });
+  
+  const tsheets = new Tsheets(mainWindow);
 
+  // Tray
+  const clocked_out_image = path.join(__dirname, 'images/tsheets-menubar.png');
+  const clocked_in_image = path.join(__dirname, 'images/tsheets-play-menubar.png');
+  app.tray = new Tray(clocked_out_image);
+  app.tray.setClockedOut = function(top_jobs) {
+    app.tray.setImage(clocked_out_image);
+    app.tray.setTitle('');
+    app.tray.setTopJobs(top_jobs, false);
+  };
+  app.tray.setClockedIn = function(title, top_jobs) {
+    app.tray.setImage(clocked_in_image);
+    app.tray.setTitle(title);
+    app.tray.setTopJobs(top_jobs, true);
+  };
+  app.tray.setTopJobs = function(jobs, clocked_in) {
+    if (!jobs) {
+      app.tray.setContextMenu(null);
+      return;
+    }
+    var menu_items = jobs.map(function(job, i) {
+      return {
+        label: job,
+        click: function() {
+          tsheets.clockin(i);
+        }
+      }
+    });
+    if (clocked_in)
+      menu_items.push({label: 'Clock Out', click: function() { tsheets.clockout() } })
+    menu_items.push({label: '--'});
+    menu_items.push({label: 'TSheets', click: function() { mainWindow.focus() } });
+    menu_items.push({label: 'Quit', click: function() { app.clockout_quit() } });
+    var contextMenu = Menu.buildFromTemplate(menu_items);
+    app.tray.setContextMenu(contextMenu);
+  };
 
   // Menu
   var menu = new TSheetsMenu();
-
-  // and load the index.html of the app.
-  // mainWindow.loadURL('https://equisolve.tsheets.com/');
-
 
   var url;
   if (url = settings.get('company-url')) {
@@ -64,10 +99,7 @@ app.on('ready', function() {
   }
   
   // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
-
-
-  const tsheets = new Tsheets(mainWindow);
+  // mainWindow.webContents.openDevTools();
 
   app.clockout = function() {
     tsheets.clockout();

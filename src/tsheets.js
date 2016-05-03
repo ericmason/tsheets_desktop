@@ -25,6 +25,10 @@ class Tsheets {
 		}
 	}
 
+	clockin(job_number) {
+		this.window.webContents.send('clockin', {job_number: job_number});
+	}
+
 	clockout(onClockedOut = null) {
 		if (this.clocked_out) {
 			if (onClockedOut) {
@@ -47,11 +51,13 @@ class Tsheets {
 		setInterval(function() {self.clockoutOnIdle()}, 500);
 
 		ipcMain.on('status', function(event, arg) {
-			if (arg == "clocked_in") {
+			if (arg.status == "clocked_in") {
 				self.clocked_out = false;
 				app.dock.setIcon(app.getAppPath() + "/images/tsheets-play.png");
-			} else if (arg == "clocked_out") {
+				app.tray.setClockedIn(arg.currentJob, arg.topJobs);
+			} else if (arg.status == "clocked_out") {
 				app.dock.setIcon(app.getAppPath() + "/images/tsheets.png");
+				app.tray.setClockedOut(arg.topJobs);
 				self.clocked_out = true;
 				self.clockout_listeners.map(function(f) {
 					f();
